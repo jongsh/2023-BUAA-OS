@@ -97,12 +97,12 @@ void page_init(void) {
 	/* Step 3: Mark all memory below `freemem` as used (set `pp_ref` to 1) */
 	/* Exercise 2.3: Your code here. (3/4) */
 	struct Page *temp = pages;
-	for (; page2pa(temp) < freemem; temp++) {
+	for (; page2kva(temp) < freemem; temp++) {
 		temp->pp_ref = (u_short)1;
 	}
 	/* Step 4: Mark the other memory as free. */
 	/* Exercise 2.3: Your code here. (4/4) */
-	for (temp = pa2page(PADDR(freemem)); page2ppn(temp) <= npage; temp++) {
+	for (temp = pa2page(PADDR(freemem)); page2ppn(temp) < npage; temp++) {
 		temp->pp_ref = (u_short)0;
 		LIST_INSERT_HEAD(&page_free_list, temp, pp_link);
 	}
@@ -134,7 +134,7 @@ int page_alloc(struct Page **new) {
 	/* Step 2: Initialize this page with zero.
 	 * Hint: use `memset`. */
 	/* Exercise 2.4: Your code here. (2/2) */
-	memset(pp, 0, sizeof(struct Page));
+	memset((void *)page2kva(pp), 0, sizeof(struct Page));
 	*new = pp;
 	return 0;
 }
@@ -176,16 +176,26 @@ static int pgdir_walk(Pde *pgdir, u_long va, int create, Pte **ppte) {
 
 	/* Step 1: Get the corresponding page directory entry. */
 	/* Exercise 2.6: Your code here. (1/3) */
+	pgdir_entryp = pgdir + PDX(va);
 
 	/* Step 2: If the corresponding page table is not existent (valid) and parameter `create`
 	 * is set, create one. Set the permission bits 'PTE_D | PTE_V' for this new page in the
 	 * page directory.
 	 * If failed to allocate a new page (out of memory), return the error. */
 	/* Exercise 2.6: Your code here. (2/3) */
-
+	if (!pgdir_entryp || ((*pgdir_entryp & PTE_V) == 0)) {
+	        if (create) {
+			if (page_alloc(&pp) == -E_NO_MEM) {
+				*ppte = NULL;
+				return -E_NO_MEM;
+			}
+			pp->pp_ref += (u_short)1;
+			*pgdir_entryp = page2pa(pp) | PTE_V | PTE_D; 
+		}
+	}
 	/* Step 3: Assign the kernel virtual address of the page table entry to '*ppte'. */
 	/* Exercise 2.6: Your code here. (3/3) */
-
+	*ppte = (Pte*)KADDR(PTE_ADDR(*pgdir_entryp)) + PTX(va);
 	return 0;
 }
 
@@ -219,15 +229,17 @@ int page_insert(Pde *pgdir, u_int asid, struct Page *pp, u_long va, u_int perm) 
 
 	/* Step 2: Flush TLB with 'tlb_invalidate'. */
 	/* Exercise 2.7: Your code here. (1/3) */
-
+	tlb_invalidate(asid, va);
 	/* Step 3: Re-get or create the page table entry. */
 	/* If failed to create, return the error. */
 	/* Exercise 2.7: Your code here. (2/3) */
-
+	if (pgdir_walk(pgdir, va, 1, &pte) == -E_NO_MEM)
+		return -E_NO_MEM;
 	/* Step 4: Insert the page to the page table entry with 'perm | PTE_V' and increase its
 	 * 'pp_ref'. */
 	/* Exercise 2.7: Your code here. (3/3) */
-
+	*pte = page2pa(pp) | perm | PTE_V;
+	pp->pp_ref += 1;
 	return 0;
 }
 
@@ -310,8 +322,11 @@ void physical_memory_manage_check(void) {
 	// should be able to allocate three pages
 	pp0 = pp1 = pp2 = 0;
 	assert(page_alloc(&pp0) == 0);
+	printk("yes");
 	assert(page_alloc(&pp1) == 0);
+	printk("yes");
 	assert(page_alloc(&pp2) == 0);
+	printk("yes");
 
 	assert(pp0);
 	assert(pp1 && pp1 != pp0);
