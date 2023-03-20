@@ -2,20 +2,26 @@
 #include <print.h>
 #include <string.h>
 
+ struct record{
+	 char *str;
+	 int length; 
+ };
 void outputk_(void *data, const char *buf, size_t len) {
 	for (int i = 0; i < len; ++i) {
-		char *temp = (char *)data;
-		temp[strlen(temp)] = buf[i];
+		struct record *temp = (struct record *)data;
+		temp->str[(temp->length)++] = buf[i];
 	}
 } 
 int sprintf(char *buf, const char *fmt, ...) {
-	memset((void *)buf, 0, strlen(buf));
+	struct record rc;
+	rc.str = buf;
+	rc.length = 0;
 	va_list ap;
 	va_start(ap, fmt);
-	vprintfmt(outputk_, buf, fmt, ap);
+	vprintfmt(outputk_, &rc, fmt, ap);
 	va_end(ap);
-	buf[strlen(buf)] = '\0';
-	return strlen(buf);
+	rc.str[rc.length] = '\0';
+	return rc.length;
 }
 
 void *memcpy(void *dst, const void *src, size_t n) {
