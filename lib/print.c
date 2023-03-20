@@ -112,6 +112,7 @@ void vprintfmt(fmt_callback_t out, void *data, const char *fmt, va_list ap) {
 
 			 c = '(';
 			 print_char(out, data, c, 1, 0);
+			 neg_flag = 0;
 			 if (num < 0) {
 				 num = -1 * num;
 				 neg_flag = 1;
@@ -119,6 +120,7 @@ void vprintfmt(fmt_callback_t out, void *data, const char *fmt, va_list ap) {
 			 print_num(out, data, num, 10, neg_flag, width, ladjust, padc, 0);
 			 c = ',';
 			 print_char(out, data, c, 1, 0);
+			 neg_flag = 0;
 			 if (num_ < 0) {
 				 num_ = -1 * num_;
 				 neg_flag = 1;
@@ -127,6 +129,7 @@ void vprintfmt(fmt_callback_t out, void *data, const char *fmt, va_list ap) {
 			 c = ')';
 			 print_char(out, data, c, 1, 0);
                          break;
+
 		case 'o':
 		case 'O':
 			if (long_flag) {
