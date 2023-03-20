@@ -1,4 +1,22 @@
 #include <types.h>
+#include <print.h>
+#include <string.h>
+
+void outputk_(void *data, const char *buf, size_t len) {
+	for (int i = 0; i < len; ++i) {
+		char *temp = (char *)data;
+		temp[strlen(temp)] = buf[i];
+	}
+} 
+int sprintf(char *buf, const char *fmt, ...) {
+	memset((void *)buf, 0, strlen(buf));
+	va_list ap;
+	va_start(ap, fmt);
+	vprintfmt(outputk_, buf, fmt, ap);
+	va_end(ap);
+	buf[strlen(buf)] = '\0';
+	return strlen(buf);
+}
 
 void *memcpy(void *dst, const void *src, size_t n) {
 	void *dstaddr = dst;
