@@ -134,7 +134,7 @@ int page_alloc(struct Page **new) {
 	/* Step 2: Initialize this page with zero.
 	 * Hint: use `memset`. */
 	/* Exercise 2.4: Your code here. (2/2) */
-	memset((void *)page2kva(pp), 0, sizeof(struct Page));
+	memset((void *)page2kva(pp), 0, BY2PG);
 	*new = pp;
 	return 0;
 }
