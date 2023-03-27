@@ -191,7 +191,11 @@ static int pgdir_walk(Pde *pgdir, u_long va, int create, Pte **ppte) {
 			}
 			pp->pp_ref += (u_short)1;
 			*pgdir_entryp = page2pa(pp) | PTE_V | PTE_D; 
+		} else {
+			*ppte = NULL;
+			return 0; 
 		}
+			
 	}
 	/* Step 3: Assign the kernel virtual address of the page table entry to '*ppte'. */
 	/* Exercise 2.6: Your code here. (3/3) */
