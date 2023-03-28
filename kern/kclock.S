@@ -18,7 +18,7 @@ LEAF(kclock_init)
 	 */
 	/* Exercise 3.11: Your code here. */
 	lui     t1, 0xB500
-	ori     t1, t1, 0x0100
+	ori     t1, 0x0100
 	sw      t0, 0(t1)
 	jr      ra
 END(kclock_init)
