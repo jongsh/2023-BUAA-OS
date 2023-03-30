@@ -36,18 +36,19 @@ void schedule(int yield) {
 	 */
 	/* Exercise 3.12: Your code here. */
 	if (yield != 0 || count == 0 || e == NULL || e->env_status != ENV_RUNNABLE) {
-		panic_on(TAILQ_EMPTY(&env_sched_list));
-
 		if (e == NULL) {
-		} else if (e->env_status != ENV_RUNNABLE) {
-			TAILQ_REMOVE(&env_sched_list, e, env_sched_link);
-		} else if (e != NULL) {
-			TAILQ_REMOVE(&env_sched_list, e, env_sched_link);
-			TAILQ_INSERT_TAIL(&env_sched_list, e, env_sched_link);
+		} else {
+			if (e->env_status != ENV_RUNNABLE) {
+				TAILQ_REMOVE(&env_sched_list, e, env_sched_link);
+			} else {
+				TAILQ_REMOVE(&env_sched_list, e, env_sched_link);
+	                        TAILQ_INSERT_TAIL(&env_sched_list, e, env_sched_link);
+			}
 		}
-
+		panic_on(TAILQ_EMPTY(&env_sched_list));
 		e = TAILQ_FIRST(&env_sched_list);
 		count = e->env_pri;
 	} 
-	env_run(e);
+	count--;
+	env_run(e);	
 }

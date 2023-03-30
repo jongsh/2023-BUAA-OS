@@ -78,7 +78,7 @@ static void map_segment(Pde *pgdir, u_int asid, u_long pa, u_long va, u_int size
 		 *  Use 'pa2page' to get the 'struct Page *' of the physical address.
 		 */
 		/* Exercise 3.2: Your code here. */
-		page_insert(pgdir, asid, pa2page(pa + i), va + i, perm);
+		page_insert(pgdir, asid, pa2page(pa + i), va + i, perm | PTE_V);
 	}
 }
 
@@ -366,7 +366,7 @@ struct Env *env_create(const void *binary, size_t size, int priority) {
 	/* Step 2: Assign the 'priority' to 'e' and mark its 'env_status' as runnable. */
 	/* Exercise 3.7: Your code here. (2/3) */
 	e->env_status = ENV_RUNNABLE;
-
+	e->env_pri = priority;
 	/* Step 3: Use 'load_icode' to load the image from 'binary', and insert 'e' into
 	 * 'env_sched_list' using 'TAILQ_INSERT_HEAD'. */
 	/* Exercise 3.7: Your code here. (3/3) */
