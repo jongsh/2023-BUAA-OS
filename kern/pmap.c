@@ -15,6 +15,7 @@ static u_long freemem;
 
 struct Page_list page_free_list; /* Free list of physical pages */
 
+
 /* Overview:
  *   Read memory size from DEV_MP to initialize 'memsize' and calculate the corresponding 'npage'
  *   value.
@@ -203,6 +204,22 @@ static int pgdir_walk(Pde *pgdir, u_long va, int create, Pte **ppte) {
 	return 0;
 }
 
+u_int page_perm_stat(Pde *pgdir, struct Page *pp, u_int perm_mask) {
+         int cnt = 0;
+         Pte *p;
+	 for (int i = 0; i < 1024; ++i) { 
+         if ((pgdir + i != NULL) && ((pgdir[i] & PTE_V) != 0)) {
+	 for (int j = 0; j < 1024; ++j) {
+		 p = (Pte *)KADDR(PTE_ADDR(pgdir[i])) + j;
+                 if (p != NULL && (PTE_ADDR(*p) == page2pa(pp)) && (*p & PTE_V) && (*p & perm_mask)) {
+                         cnt++;
+                 }
+
+         }
+	 }
+	 }
+         return cnt;
+ }
 /* Overview:
  *   Map the physical page 'pp' at virtual address 'va'. The permission (the low 12 bits) of the
  *   page table entry should be set to 'perm|PTE_V'.
