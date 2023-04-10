@@ -139,13 +139,20 @@ int sys_mem_alloc(u_int envid, u_int va, u_int perm) {
 
 	/* Step 1: Check if 'va' is a legal user virtual address using 'is_illegal_va'. */
 	/* Exercise 4.4: Your code here. (1/3) */
+	if (is_illegal_va(va)) {
+		return -E_INVAL;
+	}
 
 	/* Step 2: Convert the envid to its corresponding 'struct Env *' using 'envid2env'. */
 	/* Hint: **Always** validate the permission in syscalls! */
 	/* Exercise 4.4: Your code here. (2/3) */
+	if (envid2env(envid, &env, perm) != 0) {
+		return -E_BAD_ENV;
+	}
 
 	/* Step 3: Allocate a physical page using 'page_alloc'. */
 	/* Exercise 4.4: Your code here. (3/3) */
+	try(page_alloc(pp));
 
 	/* Step 4: Map the allocated page at 'va' with permission 'perm' using 'page_insert'. */
 	return page_insert(env->env_pgdir, env->env_asid, pp, va, perm);
@@ -488,10 +495,10 @@ void do_syscall(struct Trapframe *tf) {
 
 	/* Step 1: Add the EPC in 'tf' by a word (size of an instruction). */
 	/* Exercise 4.2: Your code here. (1/4) */
-
+	tf->cp0_epc += 4;
 	/* Step 2: Use 'sysno' to get 'func' from 'syscall_table'. */
 	/* Exercise 4.2: Your code here. (2/4) */
-
+	func = syscall_table(sysno);
 	/* Step 3: First 3 args are stored at $a1, $a2, $a3. */
 	u_int arg1 = tf->regs[5];
 	u_int arg2 = tf->regs[6];
@@ -500,9 +507,11 @@ void do_syscall(struct Trapframe *tf) {
 	/* Step 4: Last 2 args are stored in stack at [$sp + 16 bytes], [$sp + 20 bytes] */
 	u_int arg4, arg5;
 	/* Exercise 4.2: Your code here. (3/4) */
-
+	arg4 = *(u_int *)(tf->regs[29] + 16);
+	arg5 = *(u_int *)(tf->regs[29] + 20);
 	/* Step 5: Invoke 'func' with retrieved arguments and store its return value to $v0 in 'tf'.
 	 */
 	/* Exercise 4.2: Your code here. (4/4) */
+	tf->regs[2] = func(arg1, arg2, arg3, arg4, arg5);
 
 }
