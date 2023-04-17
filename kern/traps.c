@@ -39,7 +39,6 @@ void do_ov(struct Trapframe *tf) {
 	unsigned long s = *kepc & (((1 << 5) - 1) << 21);
         unsigned long t = *kepc & (((1 << 5) - 1) << 16);
 
-	printk("%x\n", *kepc);
 	if (((*kepc & 0x20000000) == 0) && ((*kepc & ((1 << 11) - 1)) == 32)) {
 		*kepc += 1;
 		//unsigned long d = content & (((1 << 5) - 1) << 12);
