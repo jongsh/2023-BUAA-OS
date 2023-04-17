@@ -36,25 +36,23 @@ void do_ov(struct Trapframe *tf) {
 	//page_lookup(curenv->env_pgdir , uepc, &pte);
 	unsigned long pepc = va2pa(curenv->env_pgdir, uepc);
 	unsigned long *kepc = (unsigned long *)(KADDR(pepc) + (uepc & 0xffff));
-	unsigned long s = *kepc & (((1 << 5) - 1) << 21);
-        unsigned long t = *kepc & (((1 << 5) - 1) << 16);
+	unsigned long s = (*kepc & (((1 << 5) - 1) << 21)) >> 21;
+    unsigned long t = (*kepc & (((1 << 5) - 1) << 16)) >> 16;
 
 	if (((*kepc & 0x20000000) == 0) && ((*kepc & ((1 << 11) - 1)) == 32)) {
 		*kepc += 1;
-		//unsigned long d = content & (((1 << 5) - 1) << 12);
+		//unsigned long d = (content & (((1 << 5) - 1) << 12)) >> 12;
 		//tf->cp0_epc += 4;
 		//tf->regs[d] = tf->regs[s] + tf->regs[t];
 		printk("add ov handled\n");
 	} else if (((*kepc & 0x20000000) == 0) && ((*kepc & ((1 << 11) - 1)) == 34)) {
 		*kepc += 1;
-		//unsigned long d = content & (((1 << 5) - 1) << 12);
-                //tf->cp0_epc += 4;
-                //tf->regs[d] = tf->regs[s] - tf->regs[t];
+		//unsigned long d = (content & (((1 << 5) - 1) << 12)) >> 12;
+        //tf->cp0_epc += 4;
+        //tf->regs[d] = tf->regs[s] - tf->regs[t];
 		printk("sub ov handled\n");
 	} else if ((*kepc & 0x20000000) != 0) {
 		tf->cp0_epc += 4;
-		//unsigned long s = content & (((1 << 5) - 1) << 21);
-		//unsigned long t = content & (((1 << 5) - 1) << 16);
 		tf->regs[t] = tf->regs[s] / 2 + (*kepc & ((1 << 16) - 1)) / 2;
 		printk("addi ov handled\n");
 
