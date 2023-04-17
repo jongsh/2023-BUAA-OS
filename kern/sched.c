@@ -17,7 +17,13 @@
 void schedule(int yield) {
 	static int count = 0; // remaining time slices of current env
 	struct Env *e = curenv;
+	static int user_time[5];
+	int user_count[5] = {0};
 
+	struct Env *temp;
+	TAILQ_FOREACH(temp, &env_sched_list, env_sched_link) {
+		user_count[temp->env_user]++;
+	}
 	/* We always decrease the 'count' by 1.
 	 *
 	 * If 'yield' is set, or 'count' has been decreased to 0, or 'e' (previous 'curenv') is
@@ -39,15 +45,35 @@ void schedule(int yield) {
 		if (e == NULL) {
 		} else {
 			if (e->env_status != ENV_RUNNABLE) {
-				TAILQ_REMOVE(&env_sched_list, e, env_sched_link);
+				//TAILQ_REMOVE(&env_sched_list, e, env_sched_link);
 			} else {
+				user_time[e->env_user] += e->env_pri;
 				TAILQ_REMOVE(&env_sched_list, e, env_sched_link);
 	                        TAILQ_INSERT_TAIL(&env_sched_list, e, env_sched_link);
 			}
 		}
-		panic_on(TAILQ_EMPTY(&env_sched_list));
-		e = TAILQ_FIRST(&env_sched_list);
-		count = e->env_pri;
+
+		if (TAILQ_EMPTY(&env_sched_list)) {
+			panic_on(TAILQ_EMPTY(&env_sched_list));
+		}
+
+		int record = 999999999;
+		int token;
+		for (int i = 0; i < 5; ++i) {
+			if (user_count[i] > 0 && user_time[i] < record) {
+				record = user_time[i];
+				token = i;
+			}
+		}
+
+		TAILQ_FOREACH(temp, &env_sched_list, env_sched_link) { 
+			if (temp->env_user == token) {
+				e = temp;
+				count = e->env_pri;
+				break;
+			}
+		}
+
 	} 
 	count--;
 	env_run(e);	

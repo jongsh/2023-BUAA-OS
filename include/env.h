@@ -37,6 +37,7 @@ struct Env {
 
 	// Lab 6 scheduler counts
 	u_int env_runs; // number of times been env_run'ed
+	u_int env_user; // ##你需要添加的内容
 };
 
 LIST_HEAD(Env_list, Env);
