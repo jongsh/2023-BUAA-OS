@@ -149,7 +149,7 @@ int sys_mem_alloc(u_int envid, u_int va, u_int perm) {
 	/* Step 2: Convert the envid to its corresponding 'struct Env *' using 'envid2env'. */
 	/* Hint: **Always** validate the permission in syscalls! */
 	/* Exercise 4.4: Your code here. (2/3) */
-	if (envid2env(envid, &env, perm) != 0) {
+	if (envid2env(envid, &env, 1) != 0) {
 		return -E_BAD_ENV;
 	}
 
@@ -189,13 +189,13 @@ int sys_mem_map(u_int srcid, u_int srcva, u_int dstid, u_int dstva, u_int perm) 
 
 	/* Step 2: Convert the 'srcid' to its corresponding 'struct Env *' using 'envid2env'. */
 	/* Exercise 4.5: Your code here. (2/4) */
-	if (envid2env(srcid, &srcenv, perm) != 0) {
+	if (envid2env(srcid, &srcenv, 1) != 0) {
 		return -E_BAD_ENV;
 	}
 
 	/* Step 3: Convert the 'dstid' to its corresponding 'struct Env *' using 'envid2env'. */
 	/* Exercise 4.5: Your code here. (3/4) */
-	if (envid2env(dstid, &dstenv, perm) != 0) {
+	if (envid2env(dstid, &dstenv, 1) != 0) {
 		return -E_BAD_ENV;
 	}
 
@@ -231,7 +231,7 @@ int sys_mem_unmap(u_int envid, u_int va) {
 
 	/* Step 2: Convert the envid to its corresponding 'struct Env *' using 'envid2env'. */
 	/* Exercise 4.6: Your code here. (2/2) */
-	if (envid2env(envid, &e, 0) != 0) {
+	if (envid2env(envid, &e, 1) != 0) {
 		return -E_BAD_ENV;
 	}
 
