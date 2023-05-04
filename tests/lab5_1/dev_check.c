@@ -10,6 +10,7 @@ int main() {
 	while (1) {
 		if ((r = syscall_read_dev(&c, cons, 1)) != 0) {
 			debugf("syscall_read_dev is bad\n");
+			break;
 		}
 		if (c == '\r') {
 			break;
