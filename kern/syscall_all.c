@@ -21,12 +21,18 @@ int sys_barrier_alloc(int n) {
 	barriers[index].max = n;
 	barriers[index].blocked = 0;
 	barriers[index].isvalid = 1;
+	for (int i = 0; i < NENV; ++i) {
+		if (envs[i].env_parent_id == curenv->env_id) {
+			envs[i].env_barrier = index;
+		}
+	}
 	index++;
 	return 0;
 }
 
 int sys_barrier_wait() {
         int tmp = curenv->env_barrier;
+	//printk("%d\n", index);
 	if (tmp >= 0 && barriers[tmp].isvalid == 1) {
 		//printk("%d %d %d\n",tmp,  barriers[tmp].max, barriers[tmp].blocked);
 		barriers[tmp].blocked += 1;
