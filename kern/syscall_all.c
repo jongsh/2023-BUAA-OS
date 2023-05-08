@@ -9,38 +9,30 @@
 extern struct Env *curenv;
 extern struct Env envs[];
 
-struct barrier {
+struct Barrier {
 	int max;
 	int blocked;
 	int isvalid;
-} barriers[100] = {0};
-int index = 0;
+} barrier = {0};
 
 int sys_barrier_alloc(int n) {
-	curenv->env_barrier = index;
-	barriers[index].max = n;
-	barriers[index].blocked = 0;
-	barriers[index].isvalid = 1;
-	for (int i = 0; i < NENV; ++i) {
-		if (envs[i].env_parent_id == curenv->env_id) {
-			envs[i].env_barrier = index;
-		}
-	}
-	index++;
+	curenv->env_barrier = 1;
+	barrier.max = n;
+	barrier.blocked = 0;
+	barrier.isvalid = 1;
 	return 0;
 }
 
 int sys_barrier_wait() {
-        int tmp = curenv->env_barrier;
 	//printk("%d\n", index);
-	if (tmp >= 0 && barriers[tmp].isvalid == 1) {
+	if (curenv->env_barrier == 1 && barrier.isvalid == 1) {
 		//printk("%d %d %d\n",tmp,  barriers[tmp].max, barriers[tmp].blocked);
-		barriers[tmp].blocked += 1;
-		if (barriers[tmp].max == barriers[tmp].blocked) {
+		barrier.blocked += 1;
+		if (barrier.max == barrier.blocked) {
 			//printk("%d %d %d\n",tmp,  barriers[tmp].max, barriers[tmp].blocked);
-			barriers[tmp].isvalid = 0;
+			barrier.isvalid = 0;
 			for (int i = 0; i < NENV; ++i) {
-				if (envs[i].env_barrier == tmp) {
+				if (envs[i].env_barrier == 1 && envs[i].env_status != ENV_RUNNABLE) {
 					envs[i].env_status = ENV_RUNNABLE;
 					TAILQ_INSERT_HEAD(&env_sched_list, &envs[i], env_sched_link);
 					

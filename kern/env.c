@@ -275,7 +275,7 @@ int env_alloc(struct Env **new, u_int parent_id) {
 		*new = NULL;
 		return r;
 	}
-	e->env_barrier = -1;
+	e->env_barrier = 0;
 	e->env_parent_id = parent_id;
 	/* Step 4: Initialize the sp and 'cp0_status' in 'e->env_tf'. */
 	// Timer interrupt (STATUS_IM4) will be enabled.
