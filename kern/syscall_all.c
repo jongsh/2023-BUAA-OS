@@ -7,8 +7,46 @@
 #include <syscall.h>
 
 extern struct Env *curenv;
+extern struct Env envs[];
 
-/* Overview:
+struct barrier {
+	int max;
+	int blocked;
+	int isvalid;
+} barriers[100] = {0};
+int index = 0;
+
+int sys_barrier_alloc(int n) {
+	curenv->env_barrier = index;
+	barriers[index].max = n;
+	barriers[index].blocked = 0;
+	barriers[index].isvalid = 1;
+	index++;
+	return 0;
+}
+
+int sys_barrier_wait() {
+        int tmp = curenv->env_barrier;
+	if (tmp >= 0 && barriers[tmp].isvalid == 1) {
+		barriers[tmp].blocked += 1;
+		if (barriers[tmp].max == barriers[tmp].blocked) {
+			barriers[tmp].isvalid = 0;
+			for (int i = 0; i < NENV; ++i) {
+				if (envs[i].env_barrier == tmp) {
+					envs[i].env_status = ENV_RUNNABLE;
+					TAILQ_INSERT_HEAD(&env_sched_list, &envs[i], env_sched_link);
+				}
+			}
+		} else {
+			curenv->env_status = ENV_NOT_RUNNABLE;
+			TAILQ_REMOVE(&env_sched_list, curenv, env_sched_link);
+		}
+	}
+	return 0;
+}
+
+
+/*
  * 	This function is used to print a character on screen.
  *
  * Pre-Condition:
@@ -273,6 +311,7 @@ int sys_exofork(void) {
 	/* Exercise 4.9: Your code here. (4/4) */
 	e->env_status = ENV_NOT_RUNNABLE;
 	e->env_pri = curenv->env_pri;
+	e->env_barrier = curenv->env_barrier;
 
 	return e->env_id;
 }
@@ -525,6 +564,8 @@ void *syscall_table[MAX_SYSNO] = {
     [SYS_panic] = sys_panic,
     [SYS_ipc_try_send] = sys_ipc_try_send,
     [SYS_ipc_recv] = sys_ipc_recv,
+    [SYS_barrier_alloc] = sys_barrier_alloc,
+    [SYS_barrier_wait] = sys_barrier_wait,
     [SYS_cgetc] = sys_cgetc,
     [SYS_write_dev] = sys_write_dev,
     [SYS_read_dev] = sys_read_dev,

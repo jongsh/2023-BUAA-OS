@@ -20,6 +20,8 @@ enum {
 	SYS_ipc_try_send,
 	SYS_ipc_recv,
 	SYS_cgetc,
+	SYS_barrier_wait,
+	SYS_barrier_alloc,
 	SYS_write_dev,
 	SYS_read_dev,
 	MAX_SYSNO,
