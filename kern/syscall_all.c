@@ -28,18 +28,22 @@ int sys_barrier_alloc(int n) {
 int sys_barrier_wait() {
         int tmp = curenv->env_barrier;
 	if (tmp >= 0 && barriers[tmp].isvalid == 1) {
+		//printk("%d %d %d\n",tmp,  barriers[tmp].max, barriers[tmp].blocked);
 		barriers[tmp].blocked += 1;
 		if (barriers[tmp].max == barriers[tmp].blocked) {
+			//printk("%d %d %d\n",tmp,  barriers[tmp].max, barriers[tmp].blocked);
 			barriers[tmp].isvalid = 0;
 			for (int i = 0; i < NENV; ++i) {
 				if (envs[i].env_barrier == tmp) {
 					envs[i].env_status = ENV_RUNNABLE;
 					TAILQ_INSERT_HEAD(&env_sched_list, &envs[i], env_sched_link);
+					
 				}
 			}
 		} else {
 			curenv->env_status = ENV_NOT_RUNNABLE;
 			TAILQ_REMOVE(&env_sched_list, curenv, env_sched_link);
+			schedule(1);
 		}
 	}
 	return 0;
