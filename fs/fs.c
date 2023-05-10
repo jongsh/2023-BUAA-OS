@@ -13,7 +13,7 @@ int block_is_free(u_int);
 // Hint: Use 'DISKMAP' and 'BY2BLK' to calculate the address.
 void *diskaddr(u_int blockno) {
 	/* Exercise 5.6: Your code here. */
-	if (blockno == 0 || (super != 0 && blockno >= super->s_nblocks)) {
+	if ((super && blockno >= super->s_nblocks)) {
 		user_panic("invalid block %08x\n", blockno);
 	}
 	return (void *)(DISKMAP + blockno * BY2BLK);
@@ -110,7 +110,6 @@ int read_block(u_int blockno, void **blk, u_int *isnew) {
 
 	// Step 3: transform block number to corresponding virtual address.
 	void *va = diskaddr(blockno);
-
 	// Step 4: read disk and set *isnew.
 	// Hint:
 	//  If this block is already mapped, just set *isnew, else alloc memory and
@@ -141,7 +140,7 @@ int map_block(u_int blockno) {
 	// Step 1: If the block is already mapped in cache, return 0.
 	// Hint: Use 'block_is_mapped'.
 	/* Exercise 5.7: Your code here. (1/5) */
-	if (block_is_mapped(blockno) == NULL) {
+	if ((block_is_mapped(blockno)) != NULL) {
 		return 0;
 	}
 
@@ -159,6 +158,9 @@ void unmap_block(u_int blockno) {
 	void *va;
 	/* Exercise 5.7: Your code here. (3/5) */
 	va = block_is_mapped(blockno);
+	if (va == 0) {
+		return;
+	}
 	// Step 2: If this block is used (not free) and dirty in cache, write it back to the disk
 	// first.
 	// Hint: Use 'block_is_free', 'block_is_dirty' to check, and 'write_block' to sync.
@@ -196,7 +198,7 @@ void free_block(u_int blockno) {
 	// You can refer to the function 'block_is_free' above.
 	// Step 1: If 'blockno' is invalid (0 or >= the number of blocks in 'super'), return.
 	/* Exercise 5.4: Your code here. (1/2) */
-	if (blockno == 0 || (super != 0 && blockno >= super->s_nblocks)) {
+	if (blockno == 0 || (super != NULL && blockno >= super->s_nblocks)) {
 		return;
 	}
 	// Step 2: Set the flag bit of 'blockno' in 'bitmap'.

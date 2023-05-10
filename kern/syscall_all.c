@@ -491,13 +491,13 @@ int sys_write_dev(u_int va, u_int pa, u_int len) {
 	if (is_illegal_va_range(va, len)) {
 		return -E_INVAL;
 	}
-	if (!((0x10000000 <= pa && pa < 0x10000020 && 0x10000000 <= pa + len && pa + len < 0x10000020)
-	   || (0x13000000 <= pa && pa < 0x13004200 && 0x13000000 <= pa + len && pa + len < 0x13004200)
-	   || (0x15000000 <= pa && pa < 0x15000200 && 0x15000000 <= pa + len && pa + len < 0x15000200))) {
-		return -E_INVAL;
+	if (((0x10000000 <= pa && pa + len <= 0x10000020)
+	   || (0x13000000 <= pa && pa + len <= 0x13004200)
+	   || (0x15000000 <= pa && pa + len <= 0x15000200))) {
+		memcpy((void *)(pa + KSEG1), (void *)va, len);
+		return 0;
 	}
-	memcpy((void *)(pa) + KSEG1, (void *)va, len);
-	return 0;
+	return -E_INVAL;
 }
 
 /* Overview:
@@ -513,16 +513,17 @@ int sys_write_dev(u_int va, u_int pa, u_int len) {
  */
 int sys_read_dev(u_int va, u_int pa, u_int len) {
 	/* Exercise 5.1: Your code here. (2/2) */
+	
 	if (is_illegal_va_range(va, len)) {
 		return -E_INVAL;
 	}
-	if (!((0x10000000 <= pa && pa < 0x10000020 && 0x10000000 <= pa + len && pa + len < 0x10000020)
-	   || (0x13000000 <= pa && pa < 0x13004200 && 0x13000000 <= pa + len && pa + len < 0x13004200)
-	   || (0x15000000 <= pa && pa < 0x15000200 && 0x15000000 <= pa + len && pa + len < 0x15000200))) {
-		return -E_INVAL;
+	if ((0x10000000 <= pa && pa + len <= 0x10000020)
+	   || (0x13000000 <= pa && pa + len <= 0x13004200)
+	   || (0x15000000 <= pa && pa + len <= 0x15000200)) {
+		memcpy((void *)va, (void *)(pa + KSEG1), len);
+		return 0;
 	}
-	memcpy((void *)va, (void *)(pa) + KSEG1, len);
-	return 0;
+	return -E_INVAL;
 }
 
 void *syscall_table[MAX_SYSNO] = {

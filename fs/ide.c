@@ -32,16 +32,26 @@ void ide_read(u_int diskno, u_int secno, void *dst, u_int nsecs) {
 	for (u_int off = 0; begin + off < end; off += BY2SECT) {
 		uint32_t temp = diskno;
 		/* Exercise 5.3: Your code here. (1/2) */
-		syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_ID), 4);
+		if (syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_ID), 4) < 0) {
+			user_panic("Wrong\n");
+		}
 		temp = begin + off;
-		syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS), 4);
+		if (syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS), 4) < 0) {
+			user_panic("Wrong\n");
+		}
 		temp = 0;
-		syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_START_OPERATION), 4);
-		syscall_read_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_STATUS), 4);
+		if (syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_START_OPERATION), 4) < 0) {
+			user_panic("Wrong\n");
+		}
+		if (syscall_read_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_STATUS), 4) < 0) {
+			user_panic("Wrong\n");
+		}
 		if (temp == 0) {
 			user_panic("ide_read failed!\n");
 		} else {
-			syscall_read_dev(dst, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_BUFFER), BY2SECT);
+			if (syscall_read_dev(dst + off, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_BUFFER), BY2SECT) < 0) {
+				user_panic("Wrong\n");
+			}
 		}
 
 	}
@@ -70,16 +80,25 @@ void ide_write(u_int diskno, u_int secno, void *src, u_int nsecs) {
 	for (u_int off = 0; begin + off < end; off += BY2SECT) {
 		uint32_t temp = diskno;
 		/* Exercise 5.3: Your code here. (2/2) */
-		syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_ID), 4);
+		if (syscall_write_dev(src + off, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_BUFFER), BY2SECT) < 0) {
+			user_panic("Wrong");
+		}
+		if (syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_ID), 4) < 0) {
+			user_panic("Wrong");
+		}
 		temp = begin + off;
-		syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS), 4);
+		if (syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS), 4) < 0) {
+			user_panic("Wrong");
+		}
 		temp = 1;
-		syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_START_OPERATION), 4);
-		syscall_read_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_STATUS), 4);
+		if (syscall_write_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_START_OPERATION), 4) < 0) {
+			user_panic("Wrong");
+		}
+		if (syscall_read_dev((void *)&temp, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_STATUS), 4) < 0) {
+			user_panic("Wrong");
+		}
 		if (temp == 0) {
 			user_panic("ide_write failed!\n");
-		} else {
-			syscall_write_dev(src, (u_int)(DEV_DISK_ADDRESS + DEV_DISK_BUFFER), BY2SECT);
 		}
 	}
 }
