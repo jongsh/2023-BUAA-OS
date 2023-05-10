@@ -510,7 +510,7 @@ int dir_lookup(struct File *dir, char *name, struct File **file) {
 		// Read the i'th block of 'dir' and get its address in 'blk' using 'file_get_block'.
 		void *blk;
 		/* Exercise 5.8: Your code here. (2/3) */
-		if((r = file_get_block(dir, i, &blk)) != 0) {
+		if((r = file_get_block(dir, i, &blk)) < 0) {
 			return r;
 		}
 
