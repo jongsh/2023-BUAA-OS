@@ -102,3 +102,91 @@ void ide_write(u_int diskno, u_int secno, void *src, u_int nsecs) {
 		}
 	}
 }
+
+struct phyblk {
+	int writable;
+	int count;
+} blks[40];
+int map[40];
+char zero[512] = {0};
+
+void flash(u_int physic_no) {
+	ide_write(0, physic_no, zero, 1);
+	blks[physic_no].count += 1;
+	blks[physic_no].writable = 1;
+}
+
+int alloc_physic_blk() {
+	u_int able_blk, unable_blk;
+	u_int able_min = 999999;
+	u_int unable_min = 99999999;
+	for (int i = 0; i < 32; ++i) {
+		if (blks[i].writable == 1) {
+			if (blks[i].count < able_min) {
+				able_min = blks[i].count;
+				able_blk = i;
+			}
+		} else {
+			if (blks[i].count < unable_min) {
+				unable_min = blks[i].count;
+				unable_blk = i;
+			}
+		}
+	}
+
+	if (blks[able_blk].count < 5) {
+		return able_blk;
+	} else {
+		char temp[512];
+		ide_read(0, unable_blk, temp, 1);
+		ide_write(0, able_blk, temp, 1);
+		blks[able_blk].writable = 0;
+		for (int i = 0; i < 32; ++i) {
+			if (map[i] == unable_blk) {
+				map[i] = able_blk;
+				break;
+			}
+		}
+		flash(unable_blk);
+		return unable_blk;
+	}
+}
+void ssd_init() {
+	for (int i = 0; i < 32; ++i) {
+		map[i] = -1;
+		blks[i].writable = 1;
+		blks[i].count = 0;
+	}
+}
+
+int ssd_read(u_int logic_no, void *dst) {
+	if (map[logic_no] == -1) {
+		return -1;
+	}
+	u_int physic_no = map[logic_no];
+	ide_read(0, physic_no, dst, 1);
+	return 0;
+
+}
+
+void ssd_write(u_int logic_no, void *src) {
+	u_int physic_no;
+	if (map[logic_no] != -1) {
+		physic_no = map[logic_no];
+		flash(physic_no);
+		
+        }
+	physic_no = alloc_physic_blk();
+	map[logic_no] = physic_no;
+	ide_write(0, physic_no, src, 1);
+	blks[physic_no].writable = 0;
+}
+
+void ssd_erase(u_int logic_no) {
+	if (map[logic_no] == -1) {
+		return;
+	}
+	flash(map[logic_no]);
+	map[logic_no] = -1;
+	return;
+}
