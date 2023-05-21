@@ -110,7 +110,7 @@ static int _pipe_is_closed(struct Fd *fd, struct Pipe *p) {
 	do {
 		runs = env->env_runs;
 		fd_ref = pageref(fd);
-		pipe_ref = pageref(fd);
+		pipe_ref = pageref(p);
 	} while (runs != env->env_runs);
 
 	return fd_ref == pipe_ref;
@@ -193,7 +193,7 @@ static int pipe_write(struct Fd *fd, const void *vbuf, u_int n, u_int offset) {
                 return i;
             syscall_yield();
         }
-		p->p_buf[p->p_wpos] = wbuf[i];
+		p->p_buf[p->p_wpos % BY2PIPE] = wbuf[i];
 		p->p_wpos++;
     }
 	if (i > 0)

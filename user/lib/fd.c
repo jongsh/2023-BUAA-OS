@@ -142,11 +142,9 @@ int dup(int oldfdnum, int newfdnum) {
 		}
 	}
 	
-	if ((r = syscall_mem_map(0, oldfd, 0, newfd, vpt[VPN(oldfd)] & (PTE_D | PTE_LIBRARY))) <
-	    0) {
+	if ((r = syscall_mem_map(0, oldfd, 0, newfd, vpt[VPN(oldfd)] & (PTE_D | PTE_LIBRARY))) < 0) {
 		goto err;
 	}
-
 
 	return newfdnum;
 
