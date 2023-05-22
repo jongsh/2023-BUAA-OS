@@ -119,6 +119,9 @@ int remove(const char *path);
 int ftruncate(int fd, u_int size);
 int sync(void);
 
+int openat(int dirfd, const char *path, int mode);
+int fsipc_openat(u_int, const char *, u_int, struct Fd *);
+
 #define user_assert(x)                                                                             \
 	do {                                                                                       \
 		if (!(x))                                                                          \

@@ -81,6 +81,40 @@ int open_lookup(u_int envid, u_int fileid, struct Open **po) {
 	return 0;
 }
 
+void serve_openat(u_int envid, struct Fsreq_openat *rq) {
+	struct Open *pOpen;
+	struct File *f;
+	struct Filefd *ff;
+	int r;
+	struct Open *o;
+	if ((r = open_lookup(envid, rq->dir_fileid, &pOpen)) < 0) {
+		ipc_send(envid, r, 0, 0);
+		return;
+	}
+	struct File *dir = pOpen->o_file;
+
+	if ((r = open_alloc(&o)) < 0) {
+                ipc_send(envid, r, 0, 0);
+	}
+        if ((r = file_openat(dir, rq->req_path, &f)) < 0) {
+                ipc_send(envid, r, 0, 0);
+                return;
+        }
+
+	o->o_file = f;
+
+	// Fill out the Filefd structure
+	ff = (struct Filefd *)o->o_ff;
+	ff->f_file = *f;
+	ff->f_fileid = o->o_fileid;
+	o->o_mode = rq->req_omode;
+	ff->f_fd.fd_omode = o->o_mode;
+	ff->f_fd.fd_dev_id = devfile.dev_id;
+
+	ipc_send(envid, 0, o->o_ff, PTE_D | PTE_LIBRARY);
+
+}
+
 // Serve requests, sending responses back to envid.
 // To send a result back, ipc_send(envid, r, 0, 0).
 // To include a page, ipc_send(envid, r, srcva, perm).
@@ -242,6 +276,10 @@ void serve(void) {
 
 		case FSREQ_SYNC:
 			serve_sync(whom);
+			break;
+
+		case FSREQ_OPENAT:
+			serve_openat(whom, (struct Fsreq_openat *)REQVA);
 			break;
 
 		default:
