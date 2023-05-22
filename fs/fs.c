@@ -659,7 +659,19 @@ int walk_path(char *path, struct File **pdir, struct File **pfile, char *lastele
 //  On success set *pfile to point at the file and return 0.
 //  On error return < 0.
 int file_open(char *path, struct File **file) {
-	return walk_path(path, 0, file, 0);
+	char tempPath[MAXPATHLEN + 1] = {0};
+	memcpy(tempPath, path, MAXPATHLEN);
+	struct File *tempFile;
+	void *blk;
+	//debugf("origin path : %s\n", tempPath);
+	do {
+		try(walk_path(tempPath, 0, &tempFile, 0));
+		file_get_block(tempFile, 0, &blk);
+		//debugf("link file : %s\n", (char *)blk);
+		memcpy(tempPath, blk, MAXPATHLEN);
+	} while (tempFile->f_type == FTYPE_LNK);
+	*file = tempFile;
+	return 0;
 }
 
 // Overview:

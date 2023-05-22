@@ -272,6 +272,30 @@ void write_file(struct File *dirf, const char *path) {
 	close(fd); // Close file descriptor.
 }
 
+void write_symlink(struct File *dirf, const char *path) {
+	struct File *target = create_file(dirf);
+	// Your code here: 使用 readlink() 函数读取链接文件指向的路径，将其写入到下一个可用的磁盘块
+	char buf[MAXPATHLEN + 1] = {0};
+	int n = readlink(path, buf, MAXPATHLEN);
+	//printf("%s\n", buf);
+	memcpy((char *)disk[nextbno].data, buf, n);
+	
+	const char *fname = strrchr(path, '/');
+	if (fname) {
+		fname++;
+	} else {
+		fname = path;
+	}
+	// Your code here: 设置链接文件的文件名、大小（指向路径的字符串的长度）、类型属性
+	strcpy(target->f_name, fname);
+
+	target->f_size = n;
+	target->f_type = FTYPE_LNK;
+
+
+	save_block_link(target, 0, next_block(BLOCK_DATA));
+}
+
 // Overview:
 //  Write directory to disk under specified dir.
 //  Notice that we may use POSIX library functions to operate on
@@ -299,6 +323,8 @@ void write_directory(struct File *dirf, char *path) {
 			sprintf(buf, "%s/%s", path, e->d_name);
 			if (e->d_type == DT_DIR) {
 				write_directory(pdir, buf);
+			} else if (e->d_type == DT_LNK) {
+				write_symlink(pdir, buf);
 			} else {
 				write_file(pdir, buf);
 			}
@@ -320,7 +346,7 @@ int main(int argc, char **argv) {
 	for (int i = 2; i < argc; i++) {
 		char *name = argv[i];
 		struct stat stat_buf;
-		int r = stat(name, &stat_buf);
+		int r = lstat(name, &stat_buf);
 		assert(r == 0);
 		if (S_ISDIR(stat_buf.st_mode)) {
 			printf("writing directory '%s' recursively into disk\n", name);
@@ -328,6 +354,10 @@ int main(int argc, char **argv) {
 		} else if (S_ISREG(stat_buf.st_mode)) {
 			printf("writing regular file '%s' into disk\n", name);
 			write_file(&super.s_root, name);
+		} else if (S_ISLNK(stat_buf.st_mode)) {
+			printf("writing symlink file '%s' into disk\n", name);
+			write_symlink(&super.s_root, name);
+
 		} else {
 			fprintf(stderr, "'%s' has illegal file mode %o\n", name, stat_buf.st_mode);
 			exit(2);
