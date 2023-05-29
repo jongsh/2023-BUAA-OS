@@ -199,7 +199,7 @@ static int pipe_write(struct Fd *fd, const void *vbuf, u_int n, u_int offset) {
 	if (i > 0)
 		return n;
 
-	user_panic("pipe_write not implemented");
+	// user_panic("pipe_write not implemented");
 }
 
 /* Overview:
