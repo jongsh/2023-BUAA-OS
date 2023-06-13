@@ -24,7 +24,11 @@ int check_sig(u_int signum, u_int handling_signum) {
     }
 
     u_int temp = signum - 1;
-    return (~mask.sig[temp/32]) & (1 << (temp % 32));
+    if (signum == 9) {
+        return 1;
+    } else {
+        return (~mask.sig[temp/32]) & (1 << (temp % 32));
+    }
 }
 
 // 返回的数字表示要处理的信号，若为 0，表示不调用 sigaction_entry
