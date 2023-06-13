@@ -44,6 +44,7 @@ int sys_print_cons(const void *s, u_int num) {
  */
 u_int sys_getenvid(void) {
 	return curenv->env_id;
+	
 }
 
 /* Overview:
@@ -273,6 +274,15 @@ int sys_exofork(void) {
 	/* Exercise 4.9: Your code here. (4/4) */
 	e->env_status = ENV_NOT_RUNNABLE;
 	e->env_pri = curenv->env_pri;
+
+	memcpy(e->env_sigaction, curenv->env_sigaction, sizeof(e->env_sigaction));
+	memcpy(e->env_sigaction_avai, curenv->env_sigaction_avai, sizeof(e->env_sigaction_avai));
+	memset(e->env_waiting_siglist, 0, sizeof(e->env_waiting_siglist));
+	memset(e->env_handling_siglist, 0, sizeof(e->env_handling_siglist));
+	e->env_waiting_top = -1;
+	e->env_handling_top = -1;
+	e->env_sa_mask = curenv->env_sa_mask;
+	e->env_user_sigaction_entry = curenv->env_user_sigaction_entry;
 
 	return e->env_id;
 }
@@ -525,6 +535,112 @@ int sys_read_dev(u_int va, u_int pa, u_int len) {
 	}
 	return -E_INVAL;
 }
+/*
+ * 为当前进程注册指定信号的处理函数，同时更新掩码
+ * 如果 oldact != NULL, 则将旧的处理结构体内容更新到该指针执行的地址中
+ */
+int sys_sigaction(u_int signum, u_int act, u_int oldact) {
+	if (signum > 64 || signum <= 0) {
+		return -1;
+	}
+
+	if (oldact) {
+		*((struct sigaction *)oldact) = curenv->env_sigaction[signum - 1];
+	}
+	curenv->env_sigaction_avai[signum - 1] = 1;
+	curenv->env_sigaction[signum - 1] = *((struct sigaction *)act);
+
+	return 0;
+}
+
+/*
+ * 向指定进程 envid 发送信号sig
+ */
+int sys_sig_kill(u_int envid, u_int sig) {
+	if (sig > 64 || sig <= 0) {
+		return -1;
+	}
+	struct Env *e;
+	if (envid2env(envid, &e, 0) != 0) { // 得到目标进程控制块
+		return -1;
+	}
+
+	e->env_waiting_siglist[++e->env_waiting_top] = sig;
+	return 0;
+}
+
+/*
+ * 按照指定方式更新进程信号掩码
+ * 三种更新方式:
+ * how = 0 将 set 参数中指定的信号添加到当前进程的信号掩码中
+ * how = 1  将 set 参数中指定的信号从当前进程的信号掩码中删除
+ * how = 2 将当前进程的信号掩码设置为 set 参数中指定的信号集
+ * 当 oldset 不为 NULL 时，还需将原有的信号掩码放在 oldset 指定的地址空间中
+ * 正常执行则返回 0，否则返回异常码 -1.
+ */
+int sys_sigprocmask(u_int how, u_int set, u_int oldset) {
+	sigset_t temp_set = *((sigset_t *)set);
+
+	if (how > 2 || how < 0) {
+		return -1;
+	}
+
+	if (oldset) {
+		((sigset_t *)oldset)->sig[0] = curenv->env_sa_mask.sig[0];
+		((sigset_t *)oldset)->sig[1] = curenv->env_sa_mask.sig[1];
+	}
+
+	if (how == 0) {
+		curenv->env_sa_mask.sig[0] |= temp_set.sig[0];
+		curenv->env_sa_mask.sig[1] |= temp_set.sig[1];
+	} else if (how == 1) {
+		curenv->env_sa_mask.sig[0] &= ~temp_set.sig[0];
+		curenv->env_sa_mask.sig[1] &= ~temp_set.sig[1];
+	} else if (how == 2) {
+		curenv->env_sa_mask.sig[0] = temp_set.sig[0];
+		curenv->env_sa_mask.sig[1] = temp_set.sig[1];
+	}
+	
+	return 0;
+}
+
+/*
+ * 设置信号处理用户入口函数 sigaction_entry
+ * 成功返回0
+ */
+int sys_set_sigaction_entry(u_int envid, u_int func) {
+	struct Env *env;
+
+	try(envid2env(envid, &env, 0));
+
+	env->env_user_sigaction_entry = func;
+
+	return 0;
+}
+
+/*
+ * 用户态信号处理函数完成后返回内核
+ */
+int sys_sigaction_back(struct Trapframe *tf) {
+	if (is_illegal_va_range((u_long)tf, sizeof *tf)) {
+		return -E_INVAL;
+	}
+
+	*((struct Trapframe *)KSTACKTOP - 1) = *tf;
+	u_int signum = curenv->env_handling_siglist[curenv->env_handling_top];
+	curenv->env_handling_siglist[curenv->env_handling_top] = 0;
+	curenv->env_handling_top--;
+
+	for (int i = curenv->env_waiting_top; i >= 0; --i) {
+		if (curenv->env_waiting_siglist[i] == signum) {
+			remove_index(curenv->env_waiting_siglist, i);
+			break;
+		}
+	}
+	curenv->env_waiting_top--;
+
+	return tf->regs[2];
+}
 
 void *syscall_table[MAX_SYSNO] = {
     [SYS_putchar] = sys_putchar,
@@ -543,6 +659,11 @@ void *syscall_table[MAX_SYSNO] = {
     [SYS_ipc_try_send] = sys_ipc_try_send,
     [SYS_ipc_recv] = sys_ipc_recv,
     [SYS_cgetc] = sys_cgetc,
+	[SYS_sigaction] = sys_sigaction,
+	[SYS_sigprocmask] = sys_sigprocmask,
+	[SYS_set_sigaction_entry] = sys_set_sigaction_entry,
+	[SYS_sigaction_back] = sys_sigaction_back,
+	[SYS_sig_kill] = sys_sig_kill,
     [SYS_write_dev] = sys_write_dev,
     [SYS_read_dev] = sys_read_dev,
 };
@@ -558,6 +679,8 @@ void *syscall_table[MAX_SYSNO] = {
  *   Number of arguments cannot exceed 5.
  */
 void do_syscall(struct Trapframe *tf) {
+	//printk("do_syscall...%d\n", tf->regs[4]);
+	
 	int (*func)(u_int, u_int, u_int, u_int, u_int);
 	int sysno = tf->regs[4];
 	if (sysno < 0 || sysno >= MAX_SYSNO) {

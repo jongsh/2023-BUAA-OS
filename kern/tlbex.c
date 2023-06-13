@@ -1,6 +1,8 @@
 #include <env.h>
 #include <pmap.h>
 
+extern struct Env *curenv;
+
 static void passive_alloc(u_int va, Pde *pgdir, u_int asid) {
 	struct Page *p = NULL;
 
@@ -33,6 +35,11 @@ static void passive_alloc(u_int va, Pde *pgdir, u_int asid) {
  */
 Pte _do_tlb_refill(u_long va, u_int asid) {
 	Pte *pte;
+
+	if (va < UTEMP && curenv) {
+		curenv->env_waiting_siglist[++curenv->env_waiting_top] = 11;
+		return 0;
+	} 
 	/* Hints:
 	 *  Invoke 'page_lookup' repeatedly in a loop to find the page table entry 'pte' associated
 	 *  with the virtual address 'va' in the current address space 'cur_pgdir'.
@@ -43,7 +50,9 @@ Pte _do_tlb_refill(u_long va, u_int asid) {
 
 	/* Exercise 2.9: Your code here. */
 	while (page_lookup(cur_pgdir, va, &pte) == NULL) {
+		
 		passive_alloc(va, cur_pgdir, asid);
+		
 	}
 	return *pte;
 }

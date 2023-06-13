@@ -74,3 +74,23 @@ int syscall_read_dev(void *va, u_int dev, u_int len) {
 	/* Exercise 5.2: Your code here. (2/2) */
 	return msyscall(SYS_read_dev, (u_int)va, dev, len);
 }
+
+int syscall_sigaction(int signum, const struct sigaction *act, struct sigaction *oldact) {
+	return msyscall(SYS_sigaction, (u_int)signum, (u_int)act, (u_int)oldact);
+}
+
+int syscall_sig_kill(u_int envid, int sig) {
+	return msyscall(SYS_sig_kill, envid, (u_int)sig);
+}
+
+int syscall_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
+	return msyscall(SYS_sigprocmask, (u_int)how, (u_int)set, (u_int)oldset);
+}
+
+int syscall_set_sigaction_entry(u_int envid, void (*func)(struct Trapframe *, void (*sa_handler)(int), u_int)) {
+	return msyscall(SYS_set_sigaction_entry, envid, (u_int)func);
+}
+
+int syscall_sigaction_back(struct Trapframe *tf) {
+	return msyscall(SYS_sigaction_back, tf);
+}

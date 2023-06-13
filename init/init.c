@@ -15,21 +15,22 @@ void mips_init() {
 	printk("init.c:\tmips_init() is called\n");
 
 	// lab2:
-        mips_detect_memory();
+    mips_detect_memory();
 	mips_vm_init();
 	page_init();
 
 	// lab3:
-	 env_init();
+	env_init();
 
 	// lab3:
-	ENV_CREATE_PRIORITY(user_bare_loop, 1);
-        ENV_CREATE_PRIORITY(user_bare_loop, 2);
+	//ENV_CREATE_PRIORITY(user_bare_loop, 1);
+    //ENV_CREATE_PRIORITY(user_bare_loop, 2);
 
 	// lab4:
 	// ENV_CREATE(user_tltest);
 	// ENV_CREATE(user_fktest);
 	// ENV_CREATE(user_pingpong);
+	ENV_CREATE(user_test_signal_weak1);
 
 	// lab6:
 	// ENV_CREATE(user_icode);  // This must be the first env!
@@ -40,8 +41,8 @@ void mips_init() {
 	// ENV_CREATE(user_devtst);
 
 	// lab3:
-	// kclock_init();
-	// enable_irq();
+	kclock_init();
+	enable_irq();
 	while (1) {
 	}
 }

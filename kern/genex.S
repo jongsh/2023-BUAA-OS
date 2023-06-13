@@ -2,7 +2,8 @@
 #include <drivers/dev_rtc.h>
 #include <stackframe.h>
 
-.macro BUILD_HANDLER exception handler
+.macro BUILD_HANDLER exception handler\
+
 NESTED(handle_\exception, TF_SIZE + 8, zero)
 	move    a0, sp
 	addiu   sp, sp, -8
@@ -15,6 +16,10 @@ END(handle_\exception)
 .text
 
 FEXPORT(ret_from_exception)
+	move    a0, sp
+	addiu   sp, sp, -8
+	jal     handle_signal
+	addiu   sp, sp, 8
 	RESTORE_SOME
 	lw      k0, TF_EPC(sp)
 	lw      sp, TF_REG29(sp) /* Deallocate stack */

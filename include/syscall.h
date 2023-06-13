@@ -20,9 +20,17 @@ enum {
 	SYS_ipc_try_send,
 	SYS_ipc_recv,
 	SYS_cgetc,
+	// lab4 challenge
+	SYS_sigaction,
+	SYS_sig_kill,
+	SYS_sigprocmask,
+	SYS_set_sigaction_entry,
+	SYS_sigaction_back,
+	//
 	SYS_write_dev,
 	SYS_read_dev,
 	MAX_SYSNO,
+	
 };
 
 #endif

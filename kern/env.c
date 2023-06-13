@@ -281,6 +281,16 @@ int env_alloc(struct Env **new, u_int parent_id) {
 	e->env_tf.cp0_status = STATUS_IM4 | STATUS_KUp | STATUS_IEp;
 	// Keep space for 'argc' and 'argv'.
 	e->env_tf.regs[29] = USTACKTOP - sizeof(int) - sizeof(char **);
+	
+	memset(e->env_sigaction, 0, sizeof(e->env_sigaction));
+	memset(e->env_sigaction_avai, 0, sizeof(e->env_sigaction_avai));
+	memset(e->env_waiting_siglist, 0, sizeof(e->env_waiting_siglist));
+	memset(e->env_handling_siglist, 0, sizeof(e->env_handling_siglist));
+	e->env_waiting_top = -1;
+	e->env_handling_top = -1;
+	(e->env_sa_mask).sig[0] = 0;
+	(e->env_sa_mask).sig[1] = 0;
+	e->env_user_sigaction_entry = 0;
 
 	/* Step 5: Remove the new Env from env_free_list. */
 	/* Exercise 3.4: Your code here. (4/4) */
@@ -342,7 +352,7 @@ static void load_icode(struct Env *e, const void *binary, size_t size) {
 	 */
 	size_t ph_off;
 	ELF_FOREACH_PHDR_OFF (ph_off, ehdr) {
-		Elf32_Phdr *ph = (Elf32_Phdr *)(binary + ph_off);
+	Elf32_Phdr *ph = (Elf32_Phdr *)(binary + ph_off);
 		if (ph->p_type == PT_LOAD) {
 			// 'elf_load_seg' is defined in lib/elfloader.c
 			// 'load_icode_mapper' defines the way in which a page in this segment
@@ -382,6 +392,7 @@ struct Env *env_create(const void *binary, size_t size, int priority) {
 	/* Exercise 3.7: Your code here. (3/3) */
 	load_icode(e, binary, size);
 	TAILQ_INSERT_HEAD(&env_sched_list, e, env_sched_link);
+
 	return e;
 }
 

@@ -19,6 +19,9 @@ void libmain(int argc, char **argv) {
 	// set env to point at our env structure in envs[].
 	env = &envs[ENVX(syscall_getenvid())];
 
+	// set env's sigaction_entry for lab4-challenge
+	syscall_set_sigaction_entry(0, sigaction_entry);
+
 	// call user main routine
 	main(argc, argv);
 

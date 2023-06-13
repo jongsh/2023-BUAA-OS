@@ -56,6 +56,7 @@ int syscall_mem_alloc(u_int envid, void *va, u_int perm);
 int syscall_mem_map(u_int srcid, void *srcva, u_int dstid, void *dstva, u_int perm);
 int syscall_mem_unmap(u_int envid, void *va);
 
+
 __attribute__((always_inline)) inline static int syscall_exofork(void) {
 	return msyscall(SYS_exofork, 0, 0, 0, 0, 0);
 }
@@ -68,6 +69,11 @@ int syscall_ipc_recv(void *dstva);
 int syscall_cgetc();
 int syscall_write_dev(void *, u_int, u_int);
 int syscall_read_dev(void *, u_int, u_int);
+int syscall_sigaction(int signum, const struct sigaction *act, struct sigaction *oldact);
+int syscall_sig_kill(u_int envid, int sig);
+int syscall_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+int syscall_set_sigaction_entry(u_int envid, void (*func)(struct Trapframe *, void (*sa_handler)(int), u_int));
+int syscall_sigaction_back(struct Trapframe *tf);
 
 // ipc.c
 void ipc_send(u_int whom, u_int val, const void *srcva, u_int perm);
@@ -118,6 +124,17 @@ int read_map(int fd, u_int offset, void **blk);
 int remove(const char *path);
 int ftruncate(int fd, u_int size);
 int sync(void);
+
+// signal_lib.c
+void sigemptyset(sigset_t *set); // 清空信号集，将所有位都设置为 0
+void sigfillset(sigset_t *set); // 设置信号集，即将所有位都设置为 1
+void sigaddset(sigset_t *set, int signum); // 向信号集中添加一个信号，即将指定信号的位设置为 1
+void sigdelset(sigset_t *set, int signum); // 从信号集中删除一个信号，即将指定信号的位设置为 0
+int sigismember(const sigset_t *set, int signum); // 检查一个信号是否在信号集中，如果在则返回 1，否则返回 0
+int sigaction(int signum, const struct sigaction *act, struct sigaction *oldact); // 信号注册函数
+int kill(u_int envid, int sig);  // 信号的发送
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset); // 修改进程掩码
+void __attribute__((noreturn)) sigaction_entry(struct Trapframe *tf, void (*sa_handler)(int), u_int signum);
 
 #define user_assert(x)                                                                             \
 	do {                                                                                       \

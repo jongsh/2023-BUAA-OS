@@ -10,6 +10,22 @@
 #define NENV (1 << LOG2NENV)
 #define ENVX(envid) ((envid) & (NENV - 1))
 
+// lab4 challenge
+typedef struct sigset_t{
+    int sig[2]; //最多 32*2=64 种信号
+}sigset_t;
+
+struct sigaction{
+    void (*sa_handler)(int);  // 处理函数
+    sigset_t sa_mask;         // 掩码
+};
+
+struct signode{
+	u_int signum;
+	struct signode *next;
+};
+
+
 // Values of env_status in struct Env
 #define ENV_FREE 0
 #define ENV_RUNNABLE 1
@@ -37,6 +53,16 @@ struct Env {
 
 	// Lab 6 scheduler counts
 	u_int env_runs; // number of times been env_run'ed
+
+	// Lab4 challenge
+	struct sigaction env_sigaction[64];   // 64 中信号的处理结构体
+	u_int env_sigaction_avai[64];         // sigaction 有效标志, 1：有效 0：无效
+	int env_waiting_siglist[128];         // 等待被处理的信号
+	int env_waiting_top;
+	int env_handling_siglist[128];        // 正在处理的信号
+	int env_handling_top;
+	sigset_t env_sa_mask;                 // 进程的掩码
+	u_int env_user_sigaction_entry;       // sigaction caller
 };
 
 LIST_HEAD(Env_list, Env);
@@ -56,6 +82,9 @@ void enable_irq(void);
 
 void env_check(void);
 void envid2env_check(void);
+
+// lab4 challenge
+void remove_index(int a[], int index);
 
 #define ENV_CREATE_PRIORITY(x, y)                                                                  \
 	({                                                                                         \

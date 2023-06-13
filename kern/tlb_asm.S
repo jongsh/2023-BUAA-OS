@@ -39,11 +39,15 @@ NESTED(do_tlb_refill, 0, zero)
 	sw      ra, tlb_refill_ra
 	jal     _do_tlb_refill
 	lw      ra, tlb_refill_ra
+	// lab4 challenge
+	li      a1, 0
+	beq     a1, v0, return
 	mtc0    v0, CP0_ENTRYLO0
 	// See <IDT R30xx Family Software Reference Manual> Chapter 6-8
 	nop
 	/* Hint: use 'tlbwr' to write CP0.EntryHi/Lo into a random tlb entry. */
 	/* Exercise 2.10: Your code here. */
 	tlbwr
+return:
 	jr      ra
 END(do_tlb_refill)

@@ -1,6 +1,6 @@
 lab-ge = $(shell [ "$$(echo $(lab)_ | cut -f1 -d_)" -ge $(1) ] && echo true)
 
-INITAPPS             := tltest.x fktest.x pingpong.x
+INITAPPS             := tltest.x fktest.x pingpong.x test_signal_weak1.x
 
 USERLIB              := entry.o \
 			syscall_wrap.o \
@@ -8,7 +8,8 @@ USERLIB              := entry.o \
 			libos.o \
 			fork.o \
 			syscall_lib.o \
-			ipc.o
+			ipc.o \
+			signal_lib.o
 
 ifeq ($(call lab-ge,5), true)
 	INITAPPS     += devtst.x fstest.x
