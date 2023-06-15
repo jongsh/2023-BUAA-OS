@@ -24,7 +24,7 @@ int check_sig(u_int signum, u_int handling_signum) {
     }
 
     u_int temp = signum - 1;
-    if (signum == 9) {
+    if (signum == 9 || signum == 11) {
         return 1;
     } else {
         return (~mask.sig[temp/32]) & (1 << (temp % 32));
@@ -58,27 +58,23 @@ int pre_handle_signal() {
             }
         }
     }
-    //printk("kern return ...\n");
     return 0;
 }
 
 // 处理当前进程接收的所有信号
 void handle_signal(struct Trapframe *tf) {
     struct Trapframe tmp_tf = *tf;
-
-    //printk("%d : ----start--\n", curenv->env_id);
-    
+    //printk("%x : ----start--\n", curenv->env_id);
+	
     u_int signum = pre_handle_signal();
     if (signum != 0) {
+        //printk("%d\n", signum);
         curenv->env_handling_siglist[++curenv->env_handling_top] = signum;
-
         if (tf->regs[29] < USTACKTOP || tf->regs[29] >= UXSTACKTOP) {
 		    tf->regs[29] = UXSTACKTOP;
 	    }
-
         tf->regs[29] -= sizeof(struct Trapframe);
 	    *(struct Trapframe *)tf->regs[29] = tmp_tf;
-
         if (curenv->env_user_sigaction_entry) {
 		    tf->regs[4] = tf->regs[29];
             tf->regs[5] = (curenv->env_sigaction_avai[signum - 1] == 0) ? 
@@ -92,7 +88,4 @@ void handle_signal(struct Trapframe *tf) {
             printk("!! lack of sigaction_entry !!\n");
         }
     }
-
-    //printk("%d : ----end--\n", curenv->env_id);
-    return;
 }
